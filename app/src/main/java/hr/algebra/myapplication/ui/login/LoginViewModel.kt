@@ -61,19 +61,19 @@ class LoginViewModel : ViewModel() {
                 password = form.password,
             )
 
-            when (val result = repository.login(request)) {
+            when (val loginResult = repository.login(request)) {
                 is hr.algebra.myapplication.data.LoginResult.Success -> {
-                    _authToken.value = result.response.token
-                    _role.value = result.response.role
-                    _uiState.value = LoginUiState.Success
-                    _navigateToHome.value = true
+                    _authToken.value = loginResult.response.token
+                    _role.value = loginResult.response.role
+                    // After login, fetch user details
+                    fetchUserDetails(loginResult.response.token)
                 }
 
                 is hr.algebra.myapplication.data.LoginResult.HttpError -> {
-                    val message = when (result.code) {
+                    val message = when (loginResult.code) {
                         401 -> "Invalid credentials. Please check your identifier and password."
                         403 -> "Forbidden (403). The backend blocked this login request. This is usually a Spring Security configuration/CSRF issue, not a wrong password."
-                        else -> "Login failed (${result.code}). ${result.message}"
+                        else -> "Login failed (${loginResult.code}). ${loginResult.message}"
                     }
                     _uiState.value = LoginUiState.Error(message)
                 }
@@ -86,8 +86,35 @@ class LoginViewModel : ViewModel() {
 
                 is hr.algebra.myapplication.data.LoginResult.UnknownError -> {
                     _uiState.value = LoginUiState.Error(
-                        "Unexpected error: ${result.cause.message ?: result.cause::class.java.simpleName}"
+                        "Unexpected error: ${loginResult.cause.message ?: loginResult.cause::class.java.simpleName}"
                     )
+                }
+            }
+        }
+    }
+
+    private fun fetchUserDetails(token: String) {
+        viewModelScope.launch {
+            when (val userResult = repository.getMe(token)) {
+                is hr.algebra.myapplication.data.GetMeResult.Success -> {
+                    _uiState.value = LoginUiState.Success(
+                        token = token,
+                        user = User(
+                            id = userResult.user.id,
+                            username = userResult.user.username ?: "${userResult.user.firstName ?: ""} ${userResult.user.lastName ?: ""}".trim().ifEmpty { "Unknown User" },
+                            email = userResult.user.email
+                        )
+                    )
+                    _navigateToHome.value = true
+                }
+                is hr.algebra.myapplication.data.GetMeResult.HttpError -> {
+                    _uiState.value = LoginUiState.Error("Failed to fetch user details: ${userResult.message}")
+                }
+                is hr.algebra.myapplication.data.GetMeResult.NetworkError -> {
+                    _uiState.value = LoginUiState.Error("Network error while fetching user details.")
+                }
+                is hr.algebra.myapplication.data.GetMeResult.UnknownError -> {
+                    _uiState.value = LoginUiState.Error("Unknown error while fetching user details.")
                 }
             }
         }

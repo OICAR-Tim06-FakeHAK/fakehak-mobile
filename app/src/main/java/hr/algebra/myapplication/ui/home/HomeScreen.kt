@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
+    onNavigateToVehicle: () -> Unit
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
@@ -43,7 +44,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 CircleAction(title = "Profile", onClick = { /* TODO */ }, modifier = Modifier.weight(1f))
-                CircleAction(title = "Vehicle", onClick = { /* TODO */ }, modifier = Modifier.weight(1f))
+                CircleAction(title = "Vehicle", onClick = onNavigateToVehicle, modifier = Modifier.weight(1f))
             }
 
             Row(
