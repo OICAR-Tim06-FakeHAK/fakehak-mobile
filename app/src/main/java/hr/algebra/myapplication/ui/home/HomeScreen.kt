@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,14 +19,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import hr.algebra.myapplication.R
+import hr.algebra.myapplication.data.remote.LoginResponse
+import hr.algebra.myapplication.ui.navigation.Routes
+import androidx.navigation.NavController
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit,
-    onNavigateToVehicle: () -> Unit
+    onNavigateToVehicle: () -> Unit,
+    onNavigateToCase: () -> Unit
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
@@ -51,7 +58,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                CircleAction(title = "Settings", onClick = { /* TODO */ }, modifier = Modifier.weight(1f))
+                CircleAction(title = "Open Case", onClick = onNavigateToCase, modifier = Modifier.weight(1f))
                 CircleAction(title = "Logout", onClick = onLogout, modifier = Modifier.weight(1f))
             }
         }

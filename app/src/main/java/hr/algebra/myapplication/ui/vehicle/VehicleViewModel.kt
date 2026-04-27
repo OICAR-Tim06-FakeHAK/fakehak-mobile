@@ -1,76 +1,79 @@
 package hr.algebra.myapplication.ui.vehicle
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import hr.algebra.myapplication.data.CreateVehicleResult
 import hr.algebra.myapplication.data.UserRepository
 import hr.algebra.myapplication.data.remote.VehicleRequest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class VehicleViewModel(
     private val userRepository: UserRepository = UserRepository()
 ) : ViewModel() {
 
-    var uiState by mutableStateOf(VehicleUiState())
-        private set
+    private val _uiState = MutableStateFlow(VehicleUiState())
+    val uiState: StateFlow<VehicleUiState> = _uiState.asStateFlow()
 
     fun createVehicle(userId: Long, token: String) {
-        uiState = uiState.copy(isLoading = true)
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val result = userRepository.createVehicle(
                 userId,
                 token,
                 VehicleRequest(
-                    brand = uiState.brand,
-                    model = uiState.model,
-                    vin = uiState.vin,
-                    registrationPlate = uiState.registrationPlate,
-                    firstRegistrationDate = uiState.firstRegistrationDate
+                    brand = _uiState.value.brand,
+                    model = _uiState.value.model,
+                    vin = _uiState.value.vin,
+                    registrationPlate = _uiState.value.registrationPlate,
+                    firstRegistrationDate = _uiState.value.firstRegistrationDate
                 )
             )
-            uiState = when (result) {
-                is CreateVehicleResult.Success -> uiState.copy(
-                    isLoading = false,
-                    error = null,
-                    vehicle = result.vehicle
-                )
-                is CreateVehicleResult.HttpError -> uiState.copy(
-                    isLoading = false,
-                    error = "Error ${result.code}: ${result.message}"
-                )
-                is CreateVehicleResult.NetworkError -> uiState.copy(
-                    isLoading = false,
-                    error = "Network error: ${result.cause.message}"
-                )
-                is CreateVehicleResult.UnknownError -> uiState.copy(
-                    isLoading = false,
-                    error = "Unknown error: ${result.cause.message}"
-                )
+            _uiState.update {
+                when (result) {
+                    is CreateVehicleResult.Success -> it.copy(
+                        isLoading = false,
+                        error = null,
+                        vehicle = result.vehicle
+                    )
+                    is CreateVehicleResult.HttpError -> it.copy(
+                        isLoading = false,
+                        error = "Error ${result.code}: ${result.message}"
+                    )
+                    is CreateVehicleResult.NetworkError -> it.copy(
+                        isLoading = false,
+                        error = "Network error: ${result.cause.message}"
+                    )
+                    is CreateVehicleResult.UnknownError -> it.copy(
+                        isLoading = false,
+                        error = "Unknown error: ${result.cause.message}"
+                    )
+                }
             }
         }
     }
 
     fun onBrandChange(brand: String) {
-        uiState = uiState.copy(brand = brand)
+        _uiState.update { it.copy(brand = brand) }
     }
 
     fun onModelChange(model: String) {
-        uiState = uiState.copy(model = model)
+        _uiState.update { it.copy(model = model) }
     }
 
     fun onVinChange(vin: String) {
-        uiState = uiState.copy(vin = vin)
+        _uiState.update { it.copy(vin = vin) }
     }
 
     fun onRegistrationPlateChange(registrationPlate: String) {
-        uiState = uiState.copy(registrationPlate = registrationPlate)
+        _uiState.update { it.copy(registrationPlate = registrationPlate) }
     }
 
     fun onFirstRegistrationDateChange(firstRegistrationDate: String) {
-        uiState = uiState.copy(firstRegistrationDate = firstRegistrationDate)
+        _uiState.update { it.copy(firstRegistrationDate = firstRegistrationDate) }
     }
 }
 

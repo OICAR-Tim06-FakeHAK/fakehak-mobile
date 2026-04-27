@@ -17,6 +17,12 @@ interface UsersApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
+    @POST("api/cases")
+    suspend fun createCase(
+        @Header("Authorization") token: String,
+        @Body request: CreateCaseRequest
+    ): Response<CaseResponse>
+
     @POST("api/users/{userId}/vehicles")
     suspend fun createVehicle(
         @Path("userId") userId: Long,

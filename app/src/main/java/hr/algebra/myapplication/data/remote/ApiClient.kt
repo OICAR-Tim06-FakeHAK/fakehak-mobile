@@ -1,5 +1,6 @@
 package hr.algebra.myapplication.data.remote
 
+import hr.algebra.myapplication.AppContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit

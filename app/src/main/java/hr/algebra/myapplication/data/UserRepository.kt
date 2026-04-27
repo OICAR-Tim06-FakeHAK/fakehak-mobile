@@ -6,6 +6,8 @@ import hr.algebra.myapplication.data.remote.LoginResponse
 import hr.algebra.myapplication.data.remote.RegisterRequest
 import hr.algebra.myapplication.data.remote.Vehicle
 import hr.algebra.myapplication.data.remote.VehicleRequest
+import hr.algebra.myapplication.data.remote.CaseResponse
+import hr.algebra.myapplication.data.remote.CreateCaseRequest
 import java.io.IOException
 
 class UserRepository(
@@ -87,6 +89,33 @@ class UserRepository(
         }
     }
 
+    suspend fun createCase(
+        token: String,
+        request: CreateCaseRequest
+    ): CreateCaseResult {
+        return try {
+            val response = api.createCase("Bearer $token", request)
+            if (response.isSuccessful) {
+                val caseResponse = response.body()
+                if (caseResponse == null) {
+                    CreateCaseResult.UnknownError(IllegalStateException("Empty case response"))
+                } else {
+                    CreateCaseResult.Success(caseResponse)
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                CreateCaseResult.HttpError(
+                    code = response.code(),
+                    message = errorBody ?: response.message().ifBlank { "Case creation failed." }
+                )
+            }
+        } catch (e: IOException) {
+            CreateCaseResult.NetworkError(e)
+        } catch (t: Throwable) {
+            CreateCaseResult.UnknownError(t)
+        }
+    }
+
     suspend fun getMe(token: String): GetMeResult {
         return try {
             val response = api.getMe("Bearer $token")
@@ -131,6 +160,13 @@ sealed class CreateVehicleResult {
     data class HttpError(val code: Int, val message: String) : CreateVehicleResult()
     data class NetworkError(val cause: Throwable) : CreateVehicleResult()
     data class UnknownError(val cause: Throwable) : CreateVehicleResult()
+}
+
+sealed class CreateCaseResult {
+    data class Success(val caseResponse: CaseResponse) : CreateCaseResult()
+    data class HttpError(val code: Int, val message: String) : CreateCaseResult()
+    data class NetworkError(val cause: Throwable) : CreateCaseResult()
+    data class UnknownError(val cause: Throwable) : CreateCaseResult()
 }
 
 sealed class GetMeResult {

@@ -13,8 +13,10 @@ okhttp = "4.12.0"
 coroutines = "1.8.1"
 lifecycle = "2.10.0"
 navigationCompose = "2.9.0"
+playServicesLocation = "21.0.1"
 
 [libraries]
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
