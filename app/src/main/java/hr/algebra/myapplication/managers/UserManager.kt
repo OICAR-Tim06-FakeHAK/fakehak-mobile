@@ -2,6 +2,7 @@ package hr.algebra.myapplication.managers
 
 import hr.algebra.myapplication.repository.UserRepository
 import hr.algebra.myapplication.models.ApiResult
+import hr.algebra.myapplication.models.CaseReport
 import hr.algebra.myapplication.models.UserProfile
 import hr.algebra.myapplication.models.UserProfileUpdate
 import hr.algebra.myapplication.models.VehicleProfile
@@ -19,21 +20,15 @@ class UserManager(
 
     private val _userFlow = MutableStateFlow<UserProfile?>(null)
 
-    /** Observe the current user reactively from any ViewModel or Composable. */
     val userFlow: StateFlow<UserProfile?> = _userFlow.asStateFlow()
 
-    /** Synchronous snapshot — null if not loaded yet. */
     val current: UserProfile? get() = _userFlow.value
 
-    /** Convenience — the current user's id, or null if not loaded. */
     val currentUserId: Int? get() = _userFlow.value?.id
 
     // ─── Load ─────────────────────────────────────────────────────────────────
 
-    /**
-     * Fetches /api/users/me and caches the result.
-     * Call this once after login and whenever a refresh is needed.
-     */
+
     suspend fun load(): ApiResult<UserProfile> {
         return when (val result = userRepository.getUserProfile()) {
             is ApiResult.Success -> {
@@ -47,10 +42,7 @@ class UserManager(
 
     // ─── Update ───────────────────────────────────────────────────────────────
 
-    /**
-     * PUTs updated profile data to /api/users/{id} using the cached user's id,
-     * then refreshes the in-memory profile and publishes [AppEvent.UserUpdated].
-     */
+
     suspend fun update(request: UserProfileUpdate): ApiResult<UserProfile> {
         val id = currentUserId
             ?: return ApiResult.Error(message = "No authenticated user loaded")
@@ -66,10 +58,24 @@ class UserManager(
         }
     }
 
+    suspend fun createReport(caseReport: CaseReport): ApiResult<Unit> {
+        val id = currentUserId
+            ?: return ApiResult.Error(message = "No authenticated user loaded")
+
+        return when (val result = userRepository.createReport(id, caseReport)) {
+            is ApiResult.Success -> result
+            is ApiResult.Error -> result
+            is ApiResult.Loading -> result
+        }
+    }
+
     // ─── Vehicles ─────────────────────────────────────────────────────────────
 
     suspend fun addVehicle(vehicle: VehicleProfile): ApiResult<VehicleProfile> {
-        return when (val result = vehicleRepository.addVehicle(vehicle)) {
+        val id = currentUserId
+            ?: return ApiResult.Error(message = "No authenticated user loaded")
+
+        return when (val result = vehicleRepository.addVehicle(id, vehicle)) {
             is ApiResult.Success -> {
                 // Trigger a refresh of the user to get new information from backend.
                 load()
@@ -81,7 +87,10 @@ class UserManager(
     }
 
     suspend fun updateVehicle(vehicleId: Int, vehicle: VehicleProfile): ApiResult<VehicleProfile> {
-        return when (val result = vehicleRepository.updateVehicle(vehicleId, vehicle)) {
+        val id = currentUserId
+            ?: return ApiResult.Error(message = "No authenticated user loaded")
+
+        return when (val result = vehicleRepository.updateVehicle(id, vehicleId, vehicle)) {
             is ApiResult.Success -> {
                 // Trigger a refresh of the user to get new information from backend.
                 load()

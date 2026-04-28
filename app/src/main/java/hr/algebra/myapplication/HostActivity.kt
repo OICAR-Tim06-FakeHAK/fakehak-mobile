@@ -36,7 +36,6 @@ class HostActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             val tokenManager = TokenManager(this)
             if (tokenManager.isTokenValid()) {
-                tokenManager.clear()
                 loadHomeFragment()
             } else {
                 loadLoginFragment()
