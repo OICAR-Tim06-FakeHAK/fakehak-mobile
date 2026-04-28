@@ -2,10 +2,12 @@ package hr.algebra.myapplication
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.fakehak_mobile.fragments.HomeFragment
-import hr.algebra.fakehak_mobile.fragments.LoginFragment
+import hr.algebra.myapplication.fragments.HomeFragment
+import hr.algebra.myapplication.fragments.LoginFragment
 import hr.algebra.myapplication.databinding.ActivityHostBinding
+import hr.algebra.myapplication.fragments.RegisterFragment
 import hr.algebra.myapplication.managers.AppEvent
 import hr.algebra.myapplication.managers.AppEventBus
 import hr.algebra.myapplication.managers.TokenManager
@@ -25,7 +27,7 @@ class HostActivity : AppCompatActivity() {
         lifecycleScope.launch {
             AppEventBus.events.collect { event ->
                 if (event is AppEvent.Logout) {
-                    supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
                     loadLoginFragment()
                 }
             }
@@ -34,6 +36,7 @@ class HostActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             val tokenManager = TokenManager(this)
             if (tokenManager.isTokenValid()) {
+                tokenManager.clear()
                 loadHomeFragment()
             } else {
                 loadLoginFragment()
@@ -49,7 +52,7 @@ class HostActivity : AppCompatActivity() {
 
     fun loadRegisterFragment() {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, hr.algebra.fakehak_mobile.fragments.RegisterFragment())
+            .replace(R.id.fragment_container, RegisterFragment())
             .addToBackStack(null)
             .commit()
     }

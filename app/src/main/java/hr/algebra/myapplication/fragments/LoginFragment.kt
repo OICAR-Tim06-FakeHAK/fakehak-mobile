@@ -1,4 +1,4 @@
-package hr.algebra.fakehak_mobile.fragments
+package hr.algebra.myapplication.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +13,7 @@ import hr.algebra.myapplication.databinding.FragmentLoginBinding
 import hr.algebra.myapplication.managers.TokenManager
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.LoginRequest
+import hr.algebra.myapplication.repository.UserRepository
 import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
@@ -44,7 +45,7 @@ class LoginFragment : Fragment() {
             }
 
             val loginRequest = LoginRequest(username, password)
-            val userRepository = hr.algebra.myapplication.repository.UserRepository(RetrofitClient.apiService)
+            val userRepository = UserRepository(RetrofitClient.apiService)
 
             viewLifecycleOwner.lifecycleScope.launch {
                 val result = userRepository.login(loginRequest)

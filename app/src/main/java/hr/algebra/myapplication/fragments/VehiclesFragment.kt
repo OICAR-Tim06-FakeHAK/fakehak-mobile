@@ -1,4 +1,4 @@
-package hr.algebra.fakehak_mobile.fragments
+package hr.algebra.myapplication.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,8 +10,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import hr.algebra.myapplication.api.RetrofitClient
 import hr.algebra.myapplication.databinding.FragmentVehiclesBinding
-import hr.algebra.myapplication.fragments.VehiclesAdapter
+import hr.algebra.myapplication.adapters.VehiclesAdapter
 import hr.algebra.myapplication.models.ApiResult
+import hr.algebra.myapplication.R
 import kotlinx.coroutines.launch
 
 class VehiclesFragment : Fragment() {
@@ -70,7 +71,6 @@ class VehiclesFragment : Fragment() {
         }
 
         binding.btnAddVehicle.setOnClickListener {
-            // Trigger a refresh/sync just in case, or show an Add dialog.
             lifecycleScope.launch {
                 RetrofitClient.userManager?.load()
             }

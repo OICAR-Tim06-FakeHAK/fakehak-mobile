@@ -1,4 +1,4 @@
-package hr.algebra.fakehak_mobile.fragments
+package hr.algebra.myapplication.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,11 +7,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.myapplication.HostActivity
 import hr.algebra.myapplication.api.RetrofitClient
 import hr.algebra.myapplication.databinding.FragmentRegisterBinding
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.RegisterRequest
+import hr.algebra.myapplication.repository.UserRepository
 import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
@@ -47,7 +47,7 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val userRepository = hr.algebra.myapplication.repository.UserRepository(RetrofitClient.apiService)
+            val userRepository = UserRepository(RetrofitClient.apiService)
 
             viewLifecycleOwner.lifecycleScope.launch {
                 val result = userRepository.register(req)

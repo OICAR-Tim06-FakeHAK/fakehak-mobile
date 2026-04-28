@@ -1,4 +1,4 @@
-package hr.algebra.myapplication.fragments
+package hr.algebra.myapplication.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup

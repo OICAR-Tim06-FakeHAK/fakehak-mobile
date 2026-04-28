@@ -1,4 +1,4 @@
-package hr.algebra.fakehak_mobile.fragments
+package hr.algebra.myapplication.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater

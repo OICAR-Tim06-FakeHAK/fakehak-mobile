@@ -1,4 +1,4 @@
-package hr.algebra.fakehak_mobile.fragments
+package hr.algebra.myapplication.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,8 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import hr.algebra.myapplication.api.RetrofitClient
 import hr.algebra.myapplication.databinding.FragmentUserBinding
-import hr.algebra.myapplication.managers.AppEvent
-import hr.algebra.myapplication.managers.AppEventBus
 import hr.algebra.myapplication.managers.TokenManager
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.UserProfileUpdate
