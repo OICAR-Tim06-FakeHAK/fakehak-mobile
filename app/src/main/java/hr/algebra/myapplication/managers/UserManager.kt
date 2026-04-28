@@ -4,6 +4,7 @@ import hr.algebra.myapplication.repository.UserRepository
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.UserProfile
 import hr.algebra.myapplication.models.UserProfileUpdate
+import hr.algebra.myapplication.models.VehicleProfile
 import hr.algebra.myapplication.repository.VehicleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +67,30 @@ class UserManager(
     }
 
     // ─── Vehicles ─────────────────────────────────────────────────────────────
+
+    suspend fun addVehicle(vehicle: VehicleProfile): ApiResult<VehicleProfile> {
+        return when (val result = vehicleRepository.addVehicle(vehicle)) {
+            is ApiResult.Success -> {
+                // Trigger a refresh of the user to get new information from backend.
+                load()
+                result
+            }
+            is ApiResult.Error -> result
+            is ApiResult.Loading -> result
+        }
+    }
+
+    suspend fun updateVehicle(vehicleId: Int, vehicle: VehicleProfile): ApiResult<VehicleProfile> {
+        return when (val result = vehicleRepository.updateVehicle(vehicleId, vehicle)) {
+            is ApiResult.Success -> {
+                // Trigger a refresh of the user to get new information from backend.
+                load()
+                result
+            }
+            is ApiResult.Error -> result
+            is ApiResult.Loading -> result
+        }
+    }
 
     suspend fun deleteVehicle(vehicleId: Int): ApiResult<Unit> {
         val id = currentUserId

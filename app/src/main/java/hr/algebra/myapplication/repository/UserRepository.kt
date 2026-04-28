@@ -2,7 +2,6 @@ package hr.algebra.myapplication.repository
 
 import com.google.gson.Gson
 import hr.algebra.myapplication.api.ApiService
-import hr.algebra.myapplication.data.remote.Vehicle
 import hr.algebra.myapplication.models.ApiError
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.LoginRequest
