@@ -34,17 +34,17 @@ class VehiclesFragment : Fragment() {
         adapter = VehiclesAdapter(
             vehicles = emptyList(),
             onUpdateClick = { vehicle ->
-                // Example for updating, using a mock changed model to represent user input
-                val updatedVehicle = vehicle.copy(model = vehicle.model + " Updated")
-
-                lifecycleScope.launch {
-                    val result = RetrofitClient.userManager?.updateVehicle(vehicle.id, updatedVehicle)
-                    if (result is ApiResult.Error) {
-                        Toast.makeText(context, "Failed to update: ${result.message}", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, "Vehicle Successfully Updated", Toast.LENGTH_SHORT).show()
+                val dialog = hr.algebra.myapplication.dialogs.UpdateVehicleDialog(vehicle) { updatedVehicle ->
+                    lifecycleScope.launch {
+                        val result = RetrofitClient.userManager?.updateVehicle(vehicle.id, updatedVehicle)
+                        if (result is ApiResult.Error) {
+                            Toast.makeText(context, "Failed to update: ${result.message}", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Vehicle Successfully Updated", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
+                dialog.show(childFragmentManager, "UpdateVehicleDialog")
             },
             onDeleteClick = { vehicle ->
                 lifecycleScope.launch {
@@ -61,7 +61,6 @@ class VehiclesFragment : Fragment() {
         binding.rvVehicles.layoutManager = LinearLayoutManager(requireContext())
         binding.rvVehicles.adapter = adapter
 
-        // Listen for user updates automatically modifying vehicles display
         viewLifecycleOwner.lifecycleScope.launch {
             RetrofitClient.userManager?.userFlow?.collect { profile ->
                 profile?.let {
@@ -71,9 +70,19 @@ class VehiclesFragment : Fragment() {
         }
 
         binding.btnAddVehicle.setOnClickListener {
-            lifecycleScope.launch {
-                RetrofitClient.userManager?.load()
-            }
+            val emptyVehicle = hr.algebra.myapplication.models.VehicleProfile(
+                id = 0,
+                brand = "",
+                model = "",
+                vin = "",
+                registrationPlate = "",
+                firstRegistrationDate = "",
+                createdAt = ""
+            )
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.home_content_container, CreateVehicleFragment(emptyVehicle))
+                .addToBackStack(null)
+                .commit()
         }
     }
 

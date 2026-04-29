@@ -1,5 +1,7 @@
 package hr.algebra.myapplication.api
 
+import hr.algebra.myapplication.models.CaseProfile
+import hr.algebra.myapplication.models.CaseReport
 import hr.algebra.myapplication.models.LoginRequest
 import hr.algebra.myapplication.models.LoginResponse
 import hr.algebra.myapplication.models.RegisterRequest
@@ -11,8 +13,6 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // ─── Auth ────────────────────────────────────────────────────────────────
-
     @POST("api/users/register")
     suspend fun register(
         @Body request: RegisterRequest
@@ -23,8 +23,6 @@ interface ApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
-    // ─── User ─────────────────────────────────────────────────────────────────
-
     @GET("api/users/me")
     suspend fun getUserProfile(): Response<UserProfile>
 
@@ -34,18 +32,20 @@ interface ApiService {
         @Body request: UserProfileUpdate
     ): Response<UserProfile>
 
-    // ─── Vehicles ─────────────────────────────────────────────────────────────
+    @GET("api/users/{userId}/vehicles")
+    suspend fun getVehicles(
+        @Path("userId") userId: Int,
+    ): Response<List<VehicleProfile>>
 
-    @GET("api/users/me/vehicles")
-    suspend fun getVehicles(): Response<List<VehicleProfile>>
-
-    @POST("api/users/me/vehicles")
+    @POST("api/users/{userId}/vehicles")
     suspend fun addVehicle(
+        @Path("userId") userId: Int,
         @Body vehicle: VehicleProfile
     ): Response<VehicleProfile>
 
-    @PUT("api/users/me/vehicles/{vehicleId}")
+    @PUT("api/users/{userId}/vehicles/{vehicleId}")
     suspend fun updateVehicle(
+        @Path("userId") userId: Int,
         @Path("vehicleId") vehicleId: Int,
         @Body vehicle: VehicleProfile
     ): Response<VehicleProfile>
@@ -55,4 +55,14 @@ interface ApiService {
         @Path("userId") userId: Int,
         @Path("vehicleId") vehicleId: Int
     ): Response<Unit>
+
+    @POST("/api/cases")
+    suspend fun createCase(
+        @Body caseReport: CaseReport
+    ): Response<Unit>
+
+    @GET("/api/cases/user/{userId}")
+    suspend fun getUserCases(
+        @Path("userId") userId: Int
+    ): Response<List<CaseProfile>>
 }

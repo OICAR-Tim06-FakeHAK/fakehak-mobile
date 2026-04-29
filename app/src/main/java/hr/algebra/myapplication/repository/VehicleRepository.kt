@@ -10,16 +10,16 @@ import retrofit2.Response
 class VehicleRepository(
     private val api: ApiService
 ) {
-    suspend fun getVehicles(): ApiResult<List<VehicleProfile>> {
-        return safeApiCall { api.getVehicles() }
+    suspend fun getVehicles(userId: Int): ApiResult<List<VehicleProfile>> {
+        return safeApiCall { api.getVehicles(userId) }
     }
 
-    suspend fun addVehicle(vehicle: VehicleProfile): ApiResult<VehicleProfile> {
-        return safeApiCall { api.addVehicle(vehicle) }
+    suspend fun addVehicle(userId: Int, vehicle: VehicleProfile): ApiResult<VehicleProfile> {
+        return safeApiCall { api.addVehicle(userId, vehicle) }
     }
 
-    suspend fun updateVehicle(vehicleId: Int, vehicle: VehicleProfile): ApiResult<VehicleProfile> {
-        return safeApiCall { api.updateVehicle(vehicleId, vehicle) }
+    suspend fun updateVehicle(userId: Int, vehicleId: Int, vehicle: VehicleProfile): ApiResult<VehicleProfile> {
+        return safeApiCall { api.updateVehicle(userId, vehicleId, vehicle) }
     }
 
     suspend fun deleteVehicle(userId: Int, vehicleId: Int): ApiResult<Unit> {

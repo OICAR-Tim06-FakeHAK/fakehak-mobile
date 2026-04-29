@@ -4,12 +4,12 @@ import com.google.gson.Gson
 import hr.algebra.myapplication.api.ApiService
 import hr.algebra.myapplication.models.ApiError
 import hr.algebra.myapplication.models.ApiResult
+import hr.algebra.myapplication.models.CaseReport
 import hr.algebra.myapplication.models.LoginRequest
 import hr.algebra.myapplication.models.LoginResponse
 import hr.algebra.myapplication.models.RegisterRequest
 import hr.algebra.myapplication.models.UserProfile
 import hr.algebra.myapplication.models.UserProfileUpdate
-import hr.algebra.myapplication.models.VehicleProfile
 import retrofit2.Response
 
 class UserRepository(
@@ -29,6 +29,10 @@ class UserRepository(
 
     suspend fun updateUser(id: Int, request: UserProfileUpdate): ApiResult<UserProfile> {
         return safeApiCall { api.updateUser(id, request) }
+    }
+
+    suspend fun createReport(userId: Int, caseReport: CaseReport): ApiResult<Unit> {
+        return safeApiCall { api.createCase(caseReport) }
     }
 
     private suspend fun <T> safeApiCall(call: suspend () -> Response<T>): ApiResult<T> {
