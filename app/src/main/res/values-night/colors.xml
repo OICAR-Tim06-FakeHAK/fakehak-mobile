@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand (slightly lighter for dark surfaces) -->
+    <color name="brand_primary">#FF8A5C</color>
+    <color name="brand_on_primary">#5A1A00</color>
+    <color name="brand_primary_container">#7A2E0E</color>
+    <color name="brand_on_primary_container">#FFDBCC</color>
+
+    <!-- Neutrals -->
+    <color name="surface">#181210</color>
+    <color name="surface_variant">#52443D</color>
+    <color name="on_surface">#ECE0DA</color>
+    <color name="on_surface_variant">#D7C2B8</color>
+    <color name="outline">#A08D84</color>
+
+    <!-- Danger -->
+    <color name="danger">#FFB4AB</color>
+    <color name="on_danger">#690005</color>
+</resources>

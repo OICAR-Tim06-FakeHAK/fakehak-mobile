@@ -7,15 +7,21 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.myapplication.api.RetrofitClient
+import dagger.hilt.android.AndroidEntryPoint
 import hr.algebra.myapplication.databinding.FragmentCreateVehicleBinding
+import hr.algebra.myapplication.managers.UserManager
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.VehicleProfile
+import hr.algebra.myapplication.util.bindAsDatePicker
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class CreateVehicleFragment(vehicle: VehicleProfile) : Fragment() {
     private var _binding: FragmentCreateVehicleBinding? = null
     private val binding get() = _binding!!
+
+    @Inject lateinit var userManager: UserManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -27,6 +33,8 @@ class CreateVehicleFragment(vehicle: VehicleProfile) : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        binding.etDate.bindAsDatePicker(parentFragmentManager, tag = "createVehicleDatePicker")
 
         binding.btnSaveVehicle.setOnClickListener {
             val brand = binding.etBrand.text.toString()
@@ -51,7 +59,7 @@ class CreateVehicleFragment(vehicle: VehicleProfile) : Fragment() {
             )
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val result = RetrofitClient.userManager?.addVehicle(newVehicle)
+                val result = userManager.addVehicle(newVehicle)
                 if (result is ApiResult.Success) {
                     Toast.makeText(context, "Vehicle saved", Toast.LENGTH_SHORT).show()
                     parentFragmentManager.popBackStack()

@@ -8,21 +8,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.myapplication.api.RetrofitClient
+import dagger.hilt.android.AndroidEntryPoint
+import hr.algebra.myapplication.R
 import hr.algebra.myapplication.databinding.FragmentReportBinding
 import hr.algebra.myapplication.dialogs.ReportIncidentDialog
+import hr.algebra.myapplication.managers.UserManager
 import hr.algebra.myapplication.models.ApiResult
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ReportFragment : Fragment() {
     private var _binding: FragmentReportBinding? = null
     private val binding get() = _binding!!
+
+    @Inject lateinit var userManager: UserManager
 
     private var currentLatitude: Double? = null
     private var currentLongitude: Double? = null
@@ -43,6 +49,13 @@ class ReportFragment : Fragment() {
         binding.btnReportIncident.setOnClickListener {
             showReportDialog()
         }
+
+        binding.btnViewCases.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.home_content_container, CasesFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun showMap() {
@@ -52,7 +65,7 @@ class ReportFragment : Fragment() {
         map.setMultiTouchControls(true)
 
         val controller = map.controller
-        controller.setZoom(5.0) // start zoomed out
+        controller.setZoom(5.0)
 
         if (ActivityCompat.checkSelfPermission(
                 requireContext(),
@@ -76,7 +89,7 @@ class ReportFragment : Fragment() {
                 if (myLocation != null) {
                     currentLatitude = myLocation.latitude
                     currentLongitude = myLocation.longitude
-                    controller.setZoom(15.0) // zoom in
+                    controller.setZoom(15.0)
                     controller.setCenter(myLocation)
                 }
             }
@@ -84,18 +97,17 @@ class ReportFragment : Fragment() {
 
         map.overlays.add(locationOverlay)
     }
-    private fun showReportDialog() {
 
+    private fun showReportDialog() {
         val dialog = ReportIncidentDialog(
-            vehicles =
-                RetrofitClient.userManager?.userFlow?.value?.vehicles ?: emptyList(),
+            vehicles = userManager.current?.vehicles ?: emptyList(),
             currentLat = currentLatitude,
             currentLon = currentLongitude
         ) { request ->
             Log.d("REPORT", "Sending request: $request")
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val res = RetrofitClient.userManager?.createReport(request)
+                val res = userManager.createReport(request)
                 if (res is ApiResult.Success) {
                     Toast.makeText(context, "Report filed successfully", Toast.LENGTH_SHORT).show()
                 } else if (res is ApiResult.Error) {

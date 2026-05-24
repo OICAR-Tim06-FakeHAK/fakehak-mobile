@@ -7,16 +7,20 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.myapplication.api.RetrofitClient
+import dagger.hilt.android.AndroidEntryPoint
 import hr.algebra.myapplication.databinding.FragmentRegisterBinding
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.RegisterRequest
-import hr.algebra.myapplication.repository.UserRepository
+import hr.algebra.myapplication.repository.AuthRepository
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class RegisterFragment : Fragment() {
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
+
+    @Inject lateinit var authRepository: AuthRepository
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,16 +51,14 @@ class RegisterFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val userRepository = UserRepository(RetrofitClient.apiService)
-
             viewLifecycleOwner.lifecycleScope.launch {
-                val result = userRepository.register(req)
-
-                if (result is ApiResult.Success) {
-                    Toast.makeText(context, "Registration successful. Please login.", Toast.LENGTH_LONG).show()
-                    parentFragmentManager.popBackStack()
-                } else if (result is ApiResult.Error) {
-                    Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                when (val result = authRepository.register(req)) {
+                    is ApiResult.Success -> {
+                        Toast.makeText(context, "Registration successful. Please login.", Toast.LENGTH_LONG).show()
+                        parentFragmentManager.popBackStack()
+                    }
+                    is ApiResult.Error -> Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                    is ApiResult.Loading -> Unit
                 }
             }
         }

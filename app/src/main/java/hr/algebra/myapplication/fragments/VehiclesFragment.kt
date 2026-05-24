@@ -8,17 +8,22 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import hr.algebra.myapplication.api.RetrofitClient
-import hr.algebra.myapplication.databinding.FragmentVehiclesBinding
-import hr.algebra.myapplication.adapters.VehiclesAdapter
-import hr.algebra.myapplication.models.ApiResult
+import dagger.hilt.android.AndroidEntryPoint
 import hr.algebra.myapplication.R
+import hr.algebra.myapplication.adapters.VehiclesAdapter
+import hr.algebra.myapplication.databinding.FragmentVehiclesBinding
+import hr.algebra.myapplication.managers.UserManager
+import hr.algebra.myapplication.models.ApiResult
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class VehiclesFragment : Fragment() {
     private var _binding: FragmentVehiclesBinding? = null
     private val binding get() = _binding!!
     private lateinit var adapter: VehiclesAdapter
+
+    @Inject lateinit var userManager: UserManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,7 +41,7 @@ class VehiclesFragment : Fragment() {
             onUpdateClick = { vehicle ->
                 val dialog = hr.algebra.myapplication.dialogs.UpdateVehicleDialog(vehicle) { updatedVehicle ->
                     lifecycleScope.launch {
-                        val result = RetrofitClient.userManager?.updateVehicle(vehicle.id, updatedVehicle)
+                        val result = userManager.updateVehicle(vehicle.id, updatedVehicle)
                         if (result is ApiResult.Error) {
                             Toast.makeText(context, "Failed to update: ${result.message}", Toast.LENGTH_SHORT).show()
                         } else {
@@ -48,7 +53,7 @@ class VehiclesFragment : Fragment() {
             },
             onDeleteClick = { vehicle ->
                 lifecycleScope.launch {
-                    val result = RetrofitClient.userManager?.deleteVehicle(vehicle.id) // delete returns ApiResult<Unit>
+                    val result = userManager.deleteVehicle(vehicle.id)
                     if (result is ApiResult.Error) {
                         Toast.makeText(context, "Failed to delete: ${result.message}", Toast.LENGTH_SHORT).show()
                     } else {
@@ -62,7 +67,7 @@ class VehiclesFragment : Fragment() {
         binding.rvVehicles.adapter = adapter
 
         viewLifecycleOwner.lifecycleScope.launch {
-            RetrofitClient.userManager?.userFlow?.collect { profile ->
+            userManager.userFlow.collect { profile ->
                 profile?.let {
                     adapter.updateData(it.vehicles)
                 }

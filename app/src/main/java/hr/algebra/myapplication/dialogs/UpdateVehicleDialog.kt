@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import hr.algebra.myapplication.databinding.DialogUpdateVehicleBinding
 import hr.algebra.myapplication.models.VehicleProfile
+import hr.algebra.myapplication.util.bindAsDatePicker
 
 class UpdateVehicleDialog(
     private val vehicle: VehicleProfile,
@@ -24,6 +25,7 @@ class UpdateVehicleDialog(
         binding.etVin.setText(vehicle.vin)
         binding.etPlate.setText(vehicle.registrationPlate)
         binding.etDate.setText(vehicle.firstRegistrationDate)
+        binding.etDate.bindAsDatePicker(childFragmentManager, tag = "updateVehicleDatePicker")
 
         return AlertDialog.Builder(requireContext())
             .setTitle("Update Vehicle")

@@ -5,18 +5,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import hr.algebra.myapplication.api.RetrofitClient
+import dagger.hilt.android.AndroidEntryPoint
+import hr.algebra.myapplication.R
+import hr.algebra.myapplication.data.AuthPreferences
 import hr.algebra.myapplication.databinding.FragmentUserBinding
-import hr.algebra.myapplication.managers.TokenManager
+import hr.algebra.myapplication.managers.UserManager
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.UserProfileUpdate
+import hr.algebra.myapplication.repository.AuthRepository
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class UserFragment : Fragment() {
     private var _binding: FragmentUserBinding? = null
     private val binding get() = _binding!!
+
+    @Inject lateinit var userManager: UserManager
+    @Inject lateinit var authRepository: AuthRepository
+    @Inject lateinit var authPreferences: AuthPreferences
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,7 +40,7 @@ class UserFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            RetrofitClient.userManager?.userFlow?.collect { profile ->
+            userManager.userFlow.collect { profile ->
                 profile?.let {
                     binding.etFirstName.setText(it.firstName)
                     binding.etLastName.setText(it.lastName)
@@ -50,7 +60,7 @@ class UserFragment : Fragment() {
             )
 
             viewLifecycleOwner.lifecycleScope.launch {
-                val res = RetrofitClient.userManager?.update(r)
+                val res = userManager.update(r)
                 if (res is ApiResult.Success) {
                     Toast.makeText(context, "User Updated successfully", Toast.LENGTH_SHORT).show()
                 } else if (res is ApiResult.Error) {
@@ -61,9 +71,31 @@ class UserFragment : Fragment() {
 
         binding.btnLogout.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
-                TokenManager(requireContext()).clear()
-                RetrofitClient.userManager?.clear()
+                authRepository.logout()
             }
+        }
+
+        setupThemeToggle()
+    }
+
+    private fun setupThemeToggle() {
+        val checkedId = when (authPreferences.getNightMode()) {
+            AppCompatDelegate.MODE_NIGHT_NO -> R.id.btnThemeLight
+            AppCompatDelegate.MODE_NIGHT_YES -> R.id.btnThemeDark
+            else -> R.id.btnThemeSystem
+        }
+        binding.themeToggleGroup.check(checkedId)
+
+        binding.themeToggleGroup.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val mode = when (buttonId) {
+                R.id.btnThemeLight -> AppCompatDelegate.MODE_NIGHT_NO
+                R.id.btnThemeDark -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+            if (mode == authPreferences.getNightMode()) return@addOnButtonCheckedListener
+            authPreferences.saveNightMode(mode)
+            AppCompatDelegate.setDefaultNightMode(mode)
         }
     }
 
