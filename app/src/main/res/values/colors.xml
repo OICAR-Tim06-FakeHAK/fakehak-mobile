@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="orange_primary">#FF9800</color>
-    <color name="orange_dark">#F57C00</color>
+
+    <!-- Brand -->
+    <color name="brand_primary">#E85D26</color>
+    <color name="brand_on_primary">#FFFFFF</color>
+    <color name="brand_primary_container">#FFDBCC</color>
+    <color name="brand_on_primary_container">#3A1300</color>
+
+    <!-- Neutrals -->
+    <color name="surface">#FFFBF8</color>
+    <color name="surface_variant">#F4E9E3</color>
+    <color name="on_surface">#201A17</color>
+    <color name="on_surface_variant">#52443D</color>
+    <color name="outline">#85746B</color>
+
+    <!-- Danger -->
+    <color name="danger">#BA1A1A</color>
+    <color name="on_danger">#FFFFFF</color>
 </resources>

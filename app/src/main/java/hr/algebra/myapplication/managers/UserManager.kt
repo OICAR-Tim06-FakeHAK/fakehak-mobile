@@ -1,24 +1,27 @@
 package hr.algebra.myapplication.managers
 
-import hr.algebra.myapplication.repository.UserRepository
+import hr.algebra.myapplication.data.AuthPreferences
 import hr.algebra.myapplication.models.ApiResult
+import hr.algebra.myapplication.models.CaseProfile
 import hr.algebra.myapplication.models.CaseReport
 import hr.algebra.myapplication.models.UserProfile
 import hr.algebra.myapplication.models.UserProfileUpdate
 import hr.algebra.myapplication.models.VehicleProfile
+import hr.algebra.myapplication.repository.UserRepository
 import hr.algebra.myapplication.repository.VehicleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
-class UserManager(
+@Singleton
+class UserManager @Inject constructor(
     private val userRepository: UserRepository,
     private val vehicleRepository: VehicleRepository,
-    private val eventBus: AppEventBus = AppEventBus
+    private val prefs: AuthPreferences,
 ) {
-
-    private val _userFlow = MutableStateFlow<UserProfile?>(null)
+    private val _userFlow = MutableStateFlow<UserProfile?>(prefs.getUser())
 
     val userFlow: StateFlow<UserProfile?> = _userFlow.asStateFlow()
 
@@ -28,11 +31,10 @@ class UserManager(
 
     // ─── Load ─────────────────────────────────────────────────────────────────
 
-
     suspend fun load(): ApiResult<UserProfile> {
         return when (val result = userRepository.getUserProfile()) {
             is ApiResult.Success -> {
-                _userFlow.value = result.data
+                setInternal(result.data)
                 result
             }
             is ApiResult.Error -> result
@@ -42,15 +44,14 @@ class UserManager(
 
     // ─── Update ───────────────────────────────────────────────────────────────
 
-
     suspend fun update(request: UserProfileUpdate): ApiResult<UserProfile> {
         val id = currentUserId
             ?: return ApiResult.Error(message = "No authenticated user loaded")
 
         return when (val result = userRepository.updateUser(id, request)) {
             is ApiResult.Success -> {
-                _userFlow.value = result.data
-                eventBus.publish(AppEvent.UserUpdated(result.data))
+                setInternal(result.data)
+                AppEventBus.publish(AppEvent.UserUpdated(result.data))
                 result
             }
             is ApiResult.Error -> result
@@ -69,6 +70,12 @@ class UserManager(
         }
     }
 
+    suspend fun getCases(): ApiResult<List<CaseProfile>> {
+        val id = currentUserId
+            ?: return ApiResult.Error(message = "No authenticated user loaded")
+        return userRepository.getUserCases(id)
+    }
+
     // ─── Vehicles ─────────────────────────────────────────────────────────────
 
     suspend fun addVehicle(vehicle: VehicleProfile): ApiResult<VehicleProfile> {
@@ -77,7 +84,6 @@ class UserManager(
 
         return when (val result = vehicleRepository.addVehicle(id, vehicle)) {
             is ApiResult.Success -> {
-                // Trigger a refresh of the user to get new information from backend.
                 load()
                 result
             }
@@ -92,7 +98,6 @@ class UserManager(
 
         return when (val result = vehicleRepository.updateVehicle(id, vehicleId, vehicle)) {
             is ApiResult.Success -> {
-                // Trigger a refresh of the user to get new information from backend.
                 load()
                 result
             }
@@ -110,8 +115,10 @@ class UserManager(
                 val updated = _userFlow.value?.let { profile ->
                     profile.copy(vehicles = profile.vehicles.filterNot { it.id == vehicleId })
                 }
-                _userFlow.value = updated
-                updated?.let { eventBus.publish(AppEvent.UserUpdated(it)) }
+                if (updated != null) {
+                    setInternal(updated)
+                    AppEventBus.publish(AppEvent.UserUpdated(updated))
+                }
                 result
             }
             is ApiResult.Error -> result
@@ -121,12 +128,16 @@ class UserManager(
 
     // ─── Set / Clear ──────────────────────────────────────────────────────────
 
-    fun set(profile: UserProfile) {
+    fun set(profile: UserProfile) = setInternal(profile)
+
+    private fun setInternal(profile: UserProfile) {
         _userFlow.value = profile
+        prefs.saveUser(profile)
     }
 
     suspend fun clear() {
         _userFlow.value = null
-        eventBus.publish(AppEvent.Logout)
+        prefs.clearAll()
+        AppEventBus.publish(AppEvent.Logout)
     }
 }

@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import hr.algebra.myapplication.api.ApiService
 import hr.algebra.myapplication.models.ApiError
 import hr.algebra.myapplication.models.ApiResult
+import hr.algebra.myapplication.models.CaseProfile
 import hr.algebra.myapplication.models.CaseReport
 import hr.algebra.myapplication.models.LoginRequest
 import hr.algebra.myapplication.models.LoginResponse
@@ -11,8 +12,11 @@ import hr.algebra.myapplication.models.RegisterRequest
 import hr.algebra.myapplication.models.UserProfile
 import hr.algebra.myapplication.models.UserProfileUpdate
 import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class UserRepository(
+@Singleton
+class UserRepository @Inject constructor(
     private val api: ApiService
 ) {
     suspend fun register(request: RegisterRequest): ApiResult<Unit> {
@@ -33,6 +37,10 @@ class UserRepository(
 
     suspend fun createReport(userId: Int, caseReport: CaseReport): ApiResult<Unit> {
         return safeApiCall { api.createCase(caseReport) }
+    }
+
+    suspend fun getUserCases(userId: Int): ApiResult<List<CaseProfile>> {
+        return safeApiCall { api.getUserCases(userId) }
     }
 
     private suspend fun <T> safeApiCall(call: suspend () -> Response<T>): ApiResult<T> {

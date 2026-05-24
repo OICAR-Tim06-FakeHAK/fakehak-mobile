@@ -6,8 +6,11 @@ import hr.algebra.myapplication.models.ApiError
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.VehicleProfile
 import retrofit2.Response
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class VehicleRepository(
+@Singleton
+class VehicleRepository @Inject constructor(
     private val api: ApiService
 ) {
     suspend fun getVehicles(userId: Int): ApiResult<List<VehicleProfile>> {

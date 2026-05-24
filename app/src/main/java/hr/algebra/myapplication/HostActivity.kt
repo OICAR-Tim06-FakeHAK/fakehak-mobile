@@ -4,22 +4,27 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import dagger.hilt.android.AndroidEntryPoint
+import hr.algebra.myapplication.databinding.ActivityHostBinding
 import hr.algebra.myapplication.fragments.HomeFragment
 import hr.algebra.myapplication.fragments.LoginFragment
-import hr.algebra.myapplication.databinding.ActivityHostBinding
 import hr.algebra.myapplication.fragments.RegisterFragment
 import hr.algebra.myapplication.managers.AppEvent
 import hr.algebra.myapplication.managers.AppEventBus
-import hr.algebra.myapplication.managers.TokenManager
+import hr.algebra.myapplication.repository.AuthRepository
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class HostActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHostBinding
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    @Inject lateinit var authRepository: AuthRepository
 
-        hr.algebra.myapplication.api.RetrofitClient.init(this)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        super.onCreate(savedInstanceState)
 
         binding = ActivityHostBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -34,8 +39,7 @@ class HostActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            val tokenManager = TokenManager(this)
-            if (tokenManager.isTokenValid()) {
+            if (authRepository.hasPersistedSession()) {
                 loadHomeFragment()
             } else {
                 loadLoginFragment()

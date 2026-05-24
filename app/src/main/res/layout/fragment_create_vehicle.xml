@@ -41,7 +41,10 @@
         android:id="@+id/etDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="First Registration Date" />
+        android:hint="First Registration Date"
+        android:focusable="false"
+        android:clickable="true"
+        android:cursorVisible="false" />
 
     <Button
         android:id="@+id/btnSaveVehicle"
