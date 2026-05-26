@@ -8,6 +8,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import dagger.hilt.android.qualifiers.ApplicationContext
 import hr.algebra.myapplication.data.AuthPreferences
 import hr.algebra.myapplication.managers.UserManager
@@ -15,6 +16,7 @@ import hr.algebra.myapplication.models.ApiResult
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -31,6 +33,7 @@ class CaseUpdateScheduler @Inject constructor(
     private val userManager: UserManager,
     private val authPreferences: AuthPreferences,
 ) {
+
     /**
      * Seeds the baseline snapshot from the server and enqueues the first worker run.
      * Returns true on success, false if no user is loaded or the snapshot fetch failed.
@@ -41,12 +44,13 @@ class CaseUpdateScheduler @Inject constructor(
                 val snapshot = result.data.associate { it.id to it.status }
                 authPreferences.saveCaseSnapshot(snapshot)
             }
+
             is ApiResult.Error -> return false
             is ApiResult.Loading -> return false
         }
 
         authPreferences.setCaseNotificationsEnabled(true)
-        scheduleNext(context, intervalSeconds)
+        scheduleNext(context, interval)
         return true
     }
 
@@ -54,32 +58,34 @@ class CaseUpdateScheduler @Inject constructor(
     fun disable() {
         authPreferences.setCaseNotificationsEnabled(false)
         authPreferences.clearCaseSnapshot()
-        WorkManager.getInstance(context).cancelUniqueWork(CaseUpdateWorker.UNIQUE_NAME)
+
+        WorkManager.getInstance(context)
+            .cancelUniqueWork(CaseUpdateWorker.UNIQUE_NAME)
     }
 
-    fun isEnabled(): Boolean = authPreferences.isCaseNotificationsEnabled()
+    fun isEnabled(): Boolean =
+        authPreferences.isCaseNotificationsEnabled()
 
     companion object {
+
         /**
-         * Poll interval in seconds. Production target is 600–1200 (10–20 min); set lower for
-         * local verification. Periodic-work's 15-minute floor does NOT apply here — this drives
+         * Poll interval. Production target is 10–20 min; set lower for local verification.
+         * Periodic-work's 15-minute floor does NOT apply here — this drives
          * a chained OneTimeWorkRequest.
          */
-        const val intervalSeconds: Long = 20L
+        val interval: Duration = 20.seconds
 
-        fun scheduleNext(context: Context, delaySeconds: Long) {
+        fun scheduleNext(
+            context: Context,
+            delay: Duration,
+        ) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val request = OneTimeWorkRequestBuilder<CaseUpdateWorker>()
-                .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
+                .setInitialDelay(delay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
                 .setConstraints(constraints)
-                .setInputData(
-                    Data.Builder()
-                        .putLong(CaseUpdateWorker.KEY_INTERVAL_SECONDS, delaySeconds)
-                        .build()
-                )
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
@@ -87,7 +93,11 @@ class CaseUpdateScheduler @Inject constructor(
                 ExistingWorkPolicy.REPLACE,
                 request,
             )
-            Log.d("CaseUpdateScheduler", "Enqueued next run in ${delaySeconds}s")
+
+            Log.d(
+                "CaseUpdateScheduler",
+                "Enqueued next run in $delay",
+            )
         }
     }
 }

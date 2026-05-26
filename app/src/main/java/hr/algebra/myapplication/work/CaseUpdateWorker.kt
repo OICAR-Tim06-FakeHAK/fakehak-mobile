@@ -25,6 +25,8 @@ import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltWorker
 class CaseUpdateWorker @AssistedInject constructor(
@@ -35,16 +37,21 @@ class CaseUpdateWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val intervalSeconds = inputData.getLong(
-            KEY_INTERVAL_SECONDS,
-            CaseUpdateScheduler.intervalSeconds,
-        )
-        Log.d(TAG, "doWork() fired; interval=${intervalSeconds}s")
+
+        val interval = inputData
+            .getLong(
+                KEY_INTERVAL_MILLIS,
+                CaseUpdateScheduler.interval.inWholeMilliseconds,
+            )
+            .milliseconds
+
+        Log.d(TAG, "doWork() fired; interval=$interval")
 
         val state = ProcessLifecycleOwner.get().lifecycle.currentState
+
         if (state.isAtLeast(Lifecycle.State.STARTED)) {
             Log.d(TAG, "App is foreground ($state); rescheduling without notifying.")
-            rescheduleIfEnabled(intervalSeconds)
+            rescheduleIfEnabled(interval)
             return@withContext Result.success()
         }
 
@@ -54,6 +61,7 @@ class CaseUpdateWorker @AssistedInject constructor(
         }
 
         val userId = authPreferences.getUser()?.id
+
         if (userId == null) {
             Log.d(TAG, "No persisted user; stopping chain.")
             return@withContext Result.success()
@@ -61,41 +69,50 @@ class CaseUpdateWorker @AssistedInject constructor(
 
         val cases = when (val result = userRepository.getUserCases(userId)) {
             is ApiResult.Success -> result.data
+
             is ApiResult.Error -> {
                 Log.w(TAG, "getUserCases failed: ${result.message}; rescheduling.")
-                rescheduleIfEnabled(intervalSeconds)
+                rescheduleIfEnabled(interval)
                 return@withContext Result.success()
             }
+
             is ApiResult.Loading -> {
-                rescheduleIfEnabled(intervalSeconds)
+                rescheduleIfEnabled(interval)
                 return@withContext Result.success()
             }
         }
 
         val current = cases.associate { it.id to it.status }
         val previous = authPreferences.getCaseSnapshot()
+
         Log.d(TAG, "Snapshot: previous=$previous current=$current")
 
-        val changed = current.any { (id, status) -> previous[id] != status } ||
-            previous.keys.any { it !in current }
+        val changed =
+            current.any { (id, status) -> previous[id] != status } ||
+                    previous.keys.any { it !in current }
 
         if (changed) {
             Log.i(TAG, "Change detected — posting notification and stopping chain.")
+
             postCaseUpdateNotification()
+
             authPreferences.setCaseNotificationsEnabled(false)
             authPreferences.clearCaseSnapshot()
-            WorkManager.getInstance(applicationContext).cancelUniqueWork(UNIQUE_NAME)
+
+            WorkManager.getInstance(applicationContext)
+                .cancelUniqueWork(UNIQUE_NAME)
+
         } else {
-            Log.d(TAG, "No change; rescheduling in ${intervalSeconds}s.")
-            rescheduleIfEnabled(intervalSeconds)
+            Log.d(TAG, "No change; rescheduling in $interval.")
+            rescheduleIfEnabled(interval)
         }
 
         Result.success()
     }
 
-    private fun rescheduleIfEnabled(intervalSeconds: Long) {
+    private fun rescheduleIfEnabled(interval: Duration) {
         if (authPreferences.isCaseNotificationsEnabled()) {
-            CaseUpdateScheduler.scheduleNext(applicationContext, intervalSeconds)
+            CaseUpdateScheduler.scheduleNext(applicationContext, interval)
         }
     }
 
@@ -104,8 +121,10 @@ class CaseUpdateWorker @AssistedInject constructor(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
-                ctx, Manifest.permission.POST_NOTIFICATIONS
+                ctx,
+                Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
+
             if (!granted) {
                 Log.w(TAG, "POST_NOTIFICATIONS not granted; skipping notify().")
                 return
@@ -114,6 +133,7 @@ class CaseUpdateWorker @AssistedInject constructor(
 
         val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
             ?: android.content.Intent(ctx, HostActivity::class.java)
+
         val pending = PendingIntent.getActivity(
             ctx,
             0,
@@ -121,7 +141,10 @@ class CaseUpdateWorker @AssistedInject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val notification = NotificationCompat.Builder(ctx, HrApp.CASE_UPDATES_CHANNEL_ID)
+        val notification = NotificationCompat.Builder(
+            ctx,
+            HrApp.CASE_UPDATES_CHANNEL_ID,
+        )
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(ctx.getString(R.string.case_notif_title))
             .setContentText(ctx.getString(R.string.case_notif_body))
@@ -130,12 +153,15 @@ class CaseUpdateWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        NotificationManagerCompat.from(ctx).notify(NOTIFICATION_ID, notification)
+        NotificationManagerCompat.from(ctx)
+            .notify(NOTIFICATION_ID, notification)
     }
 
     companion object {
         const val UNIQUE_NAME = "case_update_worker"
-        const val KEY_INTERVAL_SECONDS = "interval_seconds"
+
+        const val KEY_INTERVAL_MILLIS = "interval_millis"
+
         private const val NOTIFICATION_ID = 4242
         private const val TAG = "CaseUpdateWorker"
     }
