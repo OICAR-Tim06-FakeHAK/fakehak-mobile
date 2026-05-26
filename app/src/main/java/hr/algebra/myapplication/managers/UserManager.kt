@@ -29,8 +29,6 @@ class UserManager @Inject constructor(
 
     val currentUserId: Int? get() = _userFlow.value?.id
 
-    // ─── Load ─────────────────────────────────────────────────────────────────
-
     suspend fun load(): ApiResult<UserProfile> {
         return when (val result = userRepository.getUserProfile()) {
             is ApiResult.Success -> {
@@ -41,8 +39,6 @@ class UserManager @Inject constructor(
             is ApiResult.Loading -> result
         }
     }
-
-    // ─── Update ───────────────────────────────────────────────────────────────
 
     suspend fun update(request: UserProfileUpdate): ApiResult<UserProfile> {
         val id = currentUserId
@@ -75,8 +71,6 @@ class UserManager @Inject constructor(
             ?: return ApiResult.Error(message = "No authenticated user loaded")
         return userRepository.getUserCases(id)
     }
-
-    // ─── Vehicles ─────────────────────────────────────────────────────────────
 
     suspend fun addVehicle(vehicle: VehicleProfile): ApiResult<VehicleProfile> {
         val id = currentUserId
@@ -125,8 +119,6 @@ class UserManager @Inject constructor(
             is ApiResult.Loading -> result
         }
     }
-
-    // ─── Set / Clear ──────────────────────────────────────────────────────────
 
     fun set(profile: UserProfile) = setInternal(profile)
 
