@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodelKtx)
     implementation(libs.androidx.lifecycle.runtimeCompose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.security.crypto)
 
     // Dependency Injection
@@ -84,6 +85,11 @@ dependencies {
     // implementation(libs.androidx.core.splashscreen)
 
     implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Background work
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

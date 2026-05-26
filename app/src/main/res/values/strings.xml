@@ -35,4 +35,12 @@
     <string name="case_field_created">Created</string>
     <string name="case_value_unassigned">Unassigned</string>
     <string name="case_location_format">%1$.5f, %2$.5f</string>
+
+    <!-- Notifications -->
+    <string name="case_updates_channel_name">Case updates</string>
+    <string name="case_updates_channel_desc">Notifies you when one of your reported cases changes status.</string>
+    <string name="case_notif_title">Case update</string>
+    <string name="case_notif_body">One of your reported cases changed. Tap to open FakeHak.</string>
+    <string name="notif_setting_label">Background case updates</string>
+    <string name="notif_setting_summary">Check every 15 minutes while the app is in the background. Stops automatically after the first detected change.</string>
 </resources>

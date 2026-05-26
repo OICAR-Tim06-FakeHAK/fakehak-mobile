@@ -1,11 +1,16 @@
 package hr.algebra.myapplication.fragments
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,6 +21,7 @@ import hr.algebra.myapplication.managers.UserManager
 import hr.algebra.myapplication.models.ApiResult
 import hr.algebra.myapplication.models.UserProfileUpdate
 import hr.algebra.myapplication.repository.AuthRepository
+import hr.algebra.myapplication.work.CaseUpdateScheduler
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,6 +33,21 @@ class UserFragment : Fragment() {
     @Inject lateinit var userManager: UserManager
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var authPreferences: AuthPreferences
+    @Inject lateinit var caseUpdateScheduler: CaseUpdateScheduler
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                enableCaseNotifications()
+            } else {
+                binding.switchCaseNotifs.isChecked = false
+                Toast.makeText(
+                    context,
+                    "Notification permission is required for background updates.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -71,11 +92,13 @@ class UserFragment : Fragment() {
 
         binding.btnLogout.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
+                caseUpdateScheduler.disable()
                 authRepository.logout()
             }
         }
 
         setupThemeToggle()
+        setupNotificationSwitch()
     }
 
     private fun setupThemeToggle() {
@@ -96,6 +119,43 @@ class UserFragment : Fragment() {
             if (mode == authPreferences.getNightMode()) return@addOnButtonCheckedListener
             authPreferences.saveNightMode(mode)
             AppCompatDelegate.setDefaultNightMode(mode)
+        }
+    }
+
+    private fun setupNotificationSwitch() {
+        binding.switchCaseNotifs.isChecked = caseUpdateScheduler.isEnabled()
+
+        binding.switchCaseNotifs.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked == caseUpdateScheduler.isEnabled()) return@setOnCheckedChangeListener
+
+            if (isChecked) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    enableCaseNotifications()
+                }
+            } else {
+                caseUpdateScheduler.disable()
+            }
+        }
+    }
+
+    private fun enableCaseNotifications() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val ok = caseUpdateScheduler.enable()
+            if (!ok) {
+                binding.switchCaseNotifs.isChecked = false
+                Toast.makeText(
+                    context,
+                    "Couldn't enable background updates — try again later.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         }
     }
 
