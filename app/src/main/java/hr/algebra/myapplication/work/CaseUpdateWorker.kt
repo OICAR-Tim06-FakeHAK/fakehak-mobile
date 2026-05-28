@@ -87,9 +87,7 @@ class CaseUpdateWorker @AssistedInject constructor(
 
         Log.d(TAG, "Snapshot: previous=$previous current=$current")
 
-        val changed =
-            current.any { (id, status) -> previous[id] != status } ||
-                    previous.keys.any { it !in current }
+        val changed = detectCaseChanges(previous, current)
 
         if (changed) {
             Log.i(TAG, "Change detected — posting notification and stopping chain.")
