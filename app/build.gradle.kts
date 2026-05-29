@@ -4,6 +4,11 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    jacoco
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 android {
@@ -39,6 +44,44 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+// ─── Coverage ───────────────────────────────────────────────────────────────
+// Run with `./gradlew jacocoTestReport` to generate HTML+XML coverage at
+// app/build/reports/jacoco/jacocoTestReport/. Reports the data/business layer; UI/Compose
+// noise (Hilt-generated, R.class, BuildConfig, ViewBinding) is excluded.
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    group = "verification"
+    description = "Generates JVM unit-test coverage report (HTML + XML)."
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+    }
+
+    val excludes = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+        "**/*Test*.*", "android/**/*.*",
+        "**/databinding/**", "**/*_HiltModules*.*", "**/*_Factory.*",
+        "**/*_MembersInjector.*", "**/Dagger*Component*.*", "**/Hilt_*.*",
+        "**/*_Impl.*", "**/*_GeneratedInjector.*",
+        // exclude UI for now — testing scope is data/business only
+        "**/fragments/**", "**/adapters/**", "**/dialogs/**", "**/HostActivity*.*",
+        "**/HrApp*.*",
+    )
+
+    val javaClasses = fileTree("${buildDir}/intermediates/javac/debug/classes") { exclude(excludes) }
+    val kotlinClasses = fileTree("${buildDir}/tmp/kotlin-classes/debug") { exclude(excludes) }
+    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(fileTree(buildDir) { include("**/*.exec", "**/*.ec") })
 }
 
 dependencies {
@@ -92,7 +135,21 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
+
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

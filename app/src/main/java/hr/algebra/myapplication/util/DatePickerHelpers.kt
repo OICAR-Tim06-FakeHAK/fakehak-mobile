@@ -30,11 +30,11 @@ fun EditText.bindAsDatePicker(fragmentManager: FragmentManager, tag: String = "d
     }
 }
 
-private fun String.toUtcMillisOrNull(): Long? = try {
+internal fun String.toUtcMillisOrNull(): Long? = try {
     LocalDate.parse(this, ISO_DATE).atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
 } catch (_: DateTimeParseException) {
     null
 }
 
-private fun Long.toIsoLocalDateString(): String =
+internal fun Long.toIsoLocalDateString(): String =
     Instant.ofEpochMilli(this).atZone(ZoneId.of("UTC")).toLocalDate().format(ISO_DATE)

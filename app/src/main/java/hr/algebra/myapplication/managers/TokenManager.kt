@@ -1,5 +1,6 @@
 package hr.algebra.myapplication.managers
 
+import androidx.annotation.VisibleForTesting
 import hr.algebra.myapplication.data.AuthPreferences
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -8,6 +9,13 @@ import javax.inject.Singleton
 class TokenManager @Inject constructor(
     private val prefs: AuthPreferences,
 ) {
+    /**
+     * Source of "current time" for JWT expiry checks. Production uses the system clock; tests
+     * override this to a fixed instant for deterministic [isTokenValid] behaviour.
+     */
+    @VisibleForTesting
+    internal var nowMillis: () -> Long = { System.currentTimeMillis() }
+
     fun saveToken(token: String) = prefs.saveToken(token)
 
     fun getToken(): String? = prefs.getToken()
@@ -26,7 +34,7 @@ class TokenManager @Inject constructor(
             )
             val decodedString = String(decodedBytes)
             val exp = org.json.JSONObject(decodedString).optLong("exp", 0)
-            exp > System.currentTimeMillis() / 1000
+            exp > nowMillis() / 1000
         } catch (_: Exception) {
             false
         }
